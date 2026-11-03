@@ -1,0 +1,3618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skulytics Engineering Update</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&family=Fragment+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Light — pulled directly from skulytics.io */
+    --bg: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-2: #F5F7FA;
+    --surface-3: #FBFCFD;
+    --ink: #1A1919;
+    --ink-2: #0A0A0A;
+    --body: #464444;
+    --muted: #B0B0B0;
+    --line: #E6E6E6;
+    --line-2: #D1D1D1;
+    --brand: #0099FF;
+    --brand-2: #006EFB;
+    --brand-3: #4094FF;
+    --brand-tint: rgba(0, 153, 255, 0.08);
+    --brand-tint-2: rgba(0, 153, 255, 0.14);
+    --gradient-card: linear-gradient(180deg, var(--surface) 0%, #F4F9FF 100%);
+    --pattern-1: rgba(0, 153, 255, 0.025);
+    --pattern-2: rgba(0, 153, 255, 0.05);
+    --pattern-3: rgba(0, 110, 251, 0.03);
+    --logo-filter: none;
+
+    --font-display: 'Funnel Display', 'Inter', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Fragment Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  /* Dark theme — keep brand blue, invert canvas */
+  body.dark {
+    --bg: #0A0E14;
+    --surface: #11161F;
+    --surface-2: #161C27;
+    --surface-3: #0E131B;
+    --ink: #F1F5F9;
+    --ink-2: #FFFFFF;
+    --body: #B8C3D1;
+    --muted: #6B7888;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-2: rgba(255, 255, 255, 0.12);
+    --brand: #1AA9FF;
+    --brand-2: #4094FF;
+    --brand-3: #6FB8FF;
+    --brand-tint: rgba(26, 169, 255, 0.12);
+    --brand-tint-2: rgba(26, 169, 255, 0.18);
+    --gradient-card: linear-gradient(180deg, var(--surface) 0%, #0F1A2A 100%);
+    --pattern-1: rgba(26, 169, 255, 0.05);
+    --pattern-2: rgba(26, 169, 255, 0.10);
+    --pattern-3: rgba(26, 169, 255, 0.06);
+    --logo-filter: brightness(1.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  /* Subtle barcode pattern reminiscent of the logo */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0 40px,
+        var(--pattern-1) 40px 41px
+      ),
+      radial-gradient(circle at top right, var(--pattern-2), transparent 50%),
+      radial-gradient(circle at bottom left, var(--pattern-3), transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+    transition: background-image 0.4s ease;
+  }
+
+  body.dark .logo-mark,
+  body.dark .title-logo {
+    filter: var(--logo-filter);
+  }
+
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 5.5vh 6.5vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.985);
+  }
+
+  /* ============ STAGGERED IN/OUT ANIMATION ============ */
+  /* Inspired by the Skuly-HR login: content slides up & fades in,
+     each element with its own beat. */
+  .slide > .header,
+  .slide > .kicker,
+  .slide > .slide-title,
+  .slide > .slide-lede,
+  .slide > .cards,
+  .slide > .phase-track,
+  .slide > .phase-note,
+  .slide > .story-flow,
+  .slide > .rate-split,
+  .slide > .consol-wrap,
+  .slide > .ddos-split,
+  .slide > .shot-grid,
+  .slide > .team-split,
+  .slide > .ai-services-grid,
+  .slide > .spotlight,
+  .title-slide > *,
+  .closing-slide > * {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(4px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .slide.active > .header,
+  .slide.active > .kicker,
+  .slide.active > .slide-title,
+  .slide.active > .slide-lede,
+  .slide.active > .cards,
+  .slide.active > .phase-track,
+  .slide.active > .phase-note,
+  .slide.active > .story-flow,
+  .slide.active > .rate-split,
+  .slide.active > .consol-wrap,
+  .slide.active > .ddos-split,
+  .slide.active > .shot-grid,
+  .slide.active > .team-split,
+  .slide.active > .ai-services-grid,
+  .slide.active > .spotlight,
+  .slide.active.title-slide > *,
+  .slide.active.closing-slide > * {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  /* Stagger delays on the way IN */
+  .slide.active > .header        { transition-delay: 0.05s; }
+  .slide.active > .kicker        { transition-delay: 0.15s; }
+  .slide.active > .slide-title   { transition-delay: 0.25s; }
+  .slide.active > .slide-lede    { transition-delay: 0.35s; }
+  .slide.active > .cards         { transition-delay: 0.45s; }
+  .slide.active > .phase-track   { transition-delay: 0.45s; }
+  .slide.active > .phase-note    { transition-delay: 0.85s; }
+  .slide.active > .story-flow    { transition-delay: 0.40s; }
+  .slide.active > .rate-split    { transition-delay: 0.40s; }
+  .slide.active > .consol-wrap   { transition-delay: 0.35s; }
+  .slide.active > .ddos-split    { transition-delay: 0.40s; }
+  .slide.active > .shot-grid     { transition-delay: 0.35s; }
+  .slide.active > .team-split    { transition-delay: 0.35s; }
+  .slide.active > .ai-services-grid { transition-delay: 0.35s; }
+  .slide.active > .spotlight     { transition-delay: 0.40s; }
+
+  /* Title + closing have their own stagger sequence */
+  .slide.title-slide.active > *:nth-child(1) { transition-delay: 0.05s; }
+  .slide.title-slide.active > *:nth-child(2) { transition-delay: 0.18s; }
+  .slide.title-slide.active > *:nth-child(3) { transition-delay: 0.30s; }
+  .slide.title-slide.active > *:nth-child(4) { transition-delay: 0.42s; }
+  .slide.title-slide.active > *:nth-child(5) { transition-delay: 0.54s; }
+
+  .slide.closing-slide.active > *:nth-child(1) { transition-delay: 0.05s; }
+  .slide.closing-slide.active > *:nth-child(2) { transition-delay: 0.20s; }
+  .slide.closing-slide.active > *:nth-child(3) { transition-delay: 0.35s; }
+  .slide.closing-slide.active > *:nth-child(4) { transition-delay: 0.50s; }
+  .slide.closing-slide.active > *:nth-child(5) { transition-delay: 0.65s; }
+
+  /* Card-level stagger inside the .cards grid */
+  .slide.active > .cards > .card {
+    animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active > .cards > .card:nth-child(1) { animation-delay: 0.50s; }
+  .slide.active > .cards > .card:nth-child(2) { animation-delay: 0.62s; }
+  .slide.active > .cards > .card:nth-child(3) { animation-delay: 0.74s; }
+
+  .slide.active > .phase-track > .phase-card {
+    animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active > .phase-track > .phase-card:nth-child(1) { animation-delay: 0.50s; }
+  .slide.active > .phase-track > .phase-card:nth-child(2) { animation-delay: 0.64s; }
+  .slide.active > .phase-track > .phase-card:nth-child(3) { animation-delay: 0.78s; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); filter: blur(6px); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
+  }
+
+  /* Spotlight panels also get their own micro-stagger */
+  .slide.active > .spotlight > .spotlight-left {
+    animation: spotIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.50s;
+  }
+  .slide.active > .spotlight > .spotlight-right {
+    animation: spotIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.62s;
+  }
+
+  @keyframes spotIn {
+    from { opacity: 0; transform: translateY(28px); filter: blur(6px); }
+    to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  }
+
+  /* Feature items inside the right panel — line-by-line check-in animation */
+  .slide.active .feature-item {
+    animation: featureIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active .feature-item:nth-child(1)  { animation-delay: 0.85s; }
+  .slide.active .feature-item:nth-child(2)  { animation-delay: 0.93s; }
+  .slide.active .feature-item:nth-child(3)  { animation-delay: 1.01s; }
+  .slide.active .feature-item:nth-child(4)  { animation-delay: 1.09s; }
+  .slide.active .feature-item:nth-child(5)  { animation-delay: 1.17s; }
+  .slide.active .feature-item:nth-child(6)  { animation-delay: 1.25s; }
+
+  @keyframes featureIn {
+    from { opacity: 0; transform: translateX(-14px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .slide.active .feature-item .check {
+    animation: checkPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .slide.active .feature-item:nth-child(1) .check { animation-delay: 1.00s; }
+  .slide.active .feature-item:nth-child(2) .check { animation-delay: 1.08s; }
+  .slide.active .feature-item:nth-child(3) .check { animation-delay: 1.16s; }
+  .slide.active .feature-item:nth-child(4) .check { animation-delay: 1.24s; }
+  .slide.active .feature-item:nth-child(5) .check { animation-delay: 1.32s; }
+  .slide.active .feature-item:nth-child(6) .check { animation-delay: 1.40s; }
+
+  @keyframes checkPop {
+    0%   { transform: scale(0) rotate(-90deg); opacity: 0; }
+    60%  { transform: scale(1.2) rotate(0deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg);   opacity: 1; }
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 3.2vh;
+  }
+
+  .logo-mark { height: 32px; width: auto; flex-shrink: 0; display: block; }
+
+  .brand-sub {
+    color: var(--body);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+    margin-left: 4px;
+  }
+
+  /* Eyebrow / kicker */
+  .kicker {
+    font-family: var(--font-mono);
+    color: var(--brand);
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 1vh;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kicker::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--brand);
+  }
+
+  /* Slide title */
+  .slide-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    color: var(--ink-2);
+    margin-bottom: 1vh;
+  }
+
+  .slide-title .accent { color: var(--brand); }
+
+  .slide-title .title-phase {
+    display: inline-block;
+    font-size: 0.46em;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+    vertical-align: middle;
+    transform: translateY(-0.12em);
+  }
+
+  .slide-lede {
+    color: var(--body);
+    font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+    max-width: 68ch;
+    margin-bottom: 3vh;
+    line-height: 1.55;
+  }
+
+  /* ============ SLIDE 1 — TITLE ============ */
+  .title-slide {
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .title-logo {
+    height: 72px;
+    width: auto;
+    margin-bottom: 3vh;
+  }
+
+  .title-mark {
+    height: 88px;
+    width: 88px;
+    margin-bottom: 3vh;
+  }
+
+  .title-eyebrow {
+    font-family: var(--font-mono);
+    color: var(--brand);
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 2.4vh;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-eyebrow::before,
+  .title-eyebrow::after {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--brand);
+  }
+
+  .title-slide h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 6.5vw, 5.5rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.0;
+    margin-bottom: 2vh;
+    color: var(--ink-2);
+  }
+
+  .title-slide h1 .accent { color: var(--brand); }
+
+  .title-slide .subtitle {
+    color: var(--body);
+    font-size: clamp(1rem, 1.4vw, 1.25rem);
+    max-width: 60ch;
+    line-height: 1.5;
+    margin-bottom: 4vh;
+  }
+
+  .title-meta {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .title-meta .dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--brand);
+  }
+
+  /* ============ CARD GRID ============ */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.4vw;
+    flex: 0 1 auto;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 2vh 1.6vw;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    min-height: 0;
+  }
+
+  .card:hover {
+    border-color: rgba(0, 153, 255, 0.4);
+    box-shadow: 0 8px 30px rgba(0, 153, 255, 0.08);
+  }
+
+  .card.clickable {
+    cursor: pointer;
+  }
+
+  .card.clickable::after {
+    content: '↗';
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--brand-tint);
+    color: var(--brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.25s ease, background 0.25s ease;
+  }
+
+  .card.clickable:hover {
+    transform: translateY(-2px);
+  }
+
+  .card.clickable:hover::after {
+    background: var(--brand);
+    color: #fff;
+    transform: rotate(-15deg) scale(1.08);
+  }
+
+  .card.clickable .click-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 1.2vh;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--brand);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ============ MODAL ============ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 4vw;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 1280px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.96) translateY(12px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  }
+
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .modal-title-block { display: flex; flex-direction: column; gap: 4px; }
+
+  .modal-eyebrow {
+    font-family: var(--font-mono);
+    color: var(--brand);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink-2);
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+
+  .modal-body {
+    padding: 24px 28px 28px;
+    overflow-y: auto;
+  }
+
+  .savings-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .savings-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: var(--surface-3);
+  }
+
+  .savings-card.highlight {
+    background: linear-gradient(135deg, #0099FF 0%, #006EFB 100%);
+    border-color: var(--brand);
+    color: #fff;
+  }
+
+  .savings-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .savings-card.highlight .savings-label { color: rgba(255,255,255,0.85); }
+
+  .savings-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.025em;
+    color: var(--ink-2);
+    line-height: 1;
+  }
+
+  .savings-card.highlight .savings-value { color: #fff; }
+
+  .savings-sub {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: var(--body);
+  }
+
+  .savings-card.highlight .savings-sub { color: rgba(255,255,255,0.9); }
+
+  .table-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .table-block {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .table-block-head {
+    padding: 14px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-block-head h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink-2);
+    letter-spacing: -0.01em;
+  }
+
+  .table-block-head .pill {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    background: var(--ink);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+
+  .table-block.future .table-block-head { background: var(--brand-tint); }
+  .table-block.future .table-block-head .pill { background: var(--brand); }
+
+  table.srv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+
+  .srv-table th,
+  .srv-table td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    color: var(--body);
+    vertical-align: top;
+  }
+
+  .srv-table th {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--surface-3);
+  }
+
+  .srv-table tr.removed {
+    background: rgba(220, 38, 38, 0.08);
+  }
+  .srv-table tr.removed td {
+    color: #DC2626;
+  }
+  body.dark .srv-table tr.removed td {
+    color: #FCA5A5;
+  }
+  body.dark .srv-table tr.removed {
+    background: rgba(248, 113, 113, 0.08);
+  }
+
+  .srv-table tr.kept td:first-child {
+    border-left: 3px solid var(--brand);
+  }
+
+  .srv-table td.cost {
+    font-family: var(--font-mono);
+    text-align: right;
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .srv-table tr.total td {
+    background: var(--surface-2);
+    font-weight: 700;
+    color: var(--ink-2);
+    border-bottom: none;
+  }
+
+  .table-block.future .srv-table tr.total td {
+    background: rgba(0, 153, 255, 0.1);
+    color: var(--brand-2);
+  }
+
+  .badge-unsub {
+    display: inline-block;
+    background: #FEE2E2;
+    color: #B91C1C;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  body.dark .badge-unsub {
+    background: rgba(248, 113, 113, 0.15);
+    color: #FCA5A5;
+  }
+
+  .badge-active {
+    display: inline-block;
+    background: var(--brand-tint);
+    color: var(--brand-2);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 980px) {
+    .savings-strip, .table-pair { grid-template-columns: 1fr; }
+  }
+
+  .card-index {
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.2vh;
+  }
+
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 1.35vw, 1.3rem);
+    font-weight: 600;
+    margin-bottom: 1vh;
+    color: var(--ink-2);
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  .card p {
+    color: var(--body);
+    font-size: clamp(0.82rem, 0.92vw, 0.92rem);
+    line-height: 1.55;
+    margin-bottom: 1vh;
+  }
+
+  .card ul {
+    list-style: none;
+    margin-top: 0.6vh;
+  }
+
+  .card li {
+    color: var(--body);
+    font-size: clamp(0.78rem, 0.88vw, 0.88rem);
+    line-height: 1.55;
+    padding-left: 16px;
+    position: relative;
+    margin-bottom: 0.4vh;
+  }
+
+  .card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 8px;
+    height: 2px;
+    background: var(--brand);
+    border-radius: 1px;
+  }
+
+  .card li strong { color: var(--ink); font-weight: 600; }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 1.2vh;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--brand-tint);
+    color: var(--brand-2);
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(0, 153, 255, 0.2);
+  }
+
+  .tag.solid {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+
+  /* ============ COST SAVINGS HIGHLIGHT (Slide 2 · Card 01) ============ */
+  .cost-metric {
+    margin: 1.4vh 0 0.2vh;
+  }
+
+  .cost-metric-main {
+    display: flex;
+    align-items: baseline;
+    gap: 1px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--brand);
+  }
+
+  .cost-currency { font-size: clamp(1.3rem, 1.6vw, 1.8rem); }
+
+  .cost-count {
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cost-unit {
+    font-size: clamp(0.85rem, 1vw, 1.05rem);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 3px;
+  }
+
+  .cost-metric-sub {
+    margin-top: 0.6vh;
+    font-size: clamp(0.74rem, 0.85vw, 0.85rem);
+    color: var(--body);
+  }
+
+  .cost-metric-sub strong { color: var(--ink-2); font-weight: 600; }
+
+  /* Pulsing glow on the savings badge to draw the eye */
+  .tag.pulse-tag {
+    position: relative;
+    animation: tagGlow 2.4s ease-in-out infinite;
+  }
+
+  @keyframes tagGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 153, 255, 0.45); }
+    50%      { box-shadow: 0 0 0 7px rgba(0, 153, 255, 0); }
+  }
+
+  /* ============ PHASE ROADMAP (Q2 → Q3 → Q4) ============ */
+  .phase-track {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.4vw;
+    flex: 0 1 auto;
+  }
+
+  .phase-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 2.6vh 1.6vw;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7vh;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .phase-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    height: 3px;
+    width: 100%;
+    background: var(--line-2);
+    transition: background 0.3s ease;
+  }
+  .phase-card.done::before    { background: var(--brand-3); }
+  .phase-card.current::before { background: var(--brand); }
+
+  .phase-q {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 3.2vw, 3.2rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--line-2);
+  }
+  .phase-card.done .phase-q    { color: var(--brand-3); }
+  .phase-card.current .phase-q { color: var(--brand); }
+
+  .phase-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.1rem, 1.5vw, 1.5rem);
+    color: var(--ink-2);
+    letter-spacing: -0.02em;
+  }
+
+  .phase-desc {
+    font-size: clamp(0.82rem, 0.92vw, 0.92rem);
+    color: var(--body);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .phase-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+    flex: 1;
+    margin-top: 0.2vh;
+  }
+
+  .phase-list li {
+    position: relative;
+    padding-left: 16px;
+    font-size: clamp(0.82rem, 0.92vw, 0.92rem);
+    line-height: 1.4;
+    color: var(--body);
+  }
+
+  .phase-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 8px;
+    height: 2px;
+    background: var(--line-2);
+    border-radius: 1px;
+  }
+  .phase-card.done .phase-list li::before    { background: var(--brand-3); }
+  .phase-card.current .phase-list li::before { background: var(--brand); }
+
+  .phase-list li strong { color: var(--ink-2); font-weight: 600; }
+
+  .phase-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    align-self: flex-start;
+    margin-top: 0.6vh;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .phase-card.done .phase-status {
+    background: var(--brand-tint);
+    color: var(--brand-2);
+    border-color: rgba(0, 153, 255, 0.2);
+  }
+  .phase-card.current {
+    border-color: rgba(0, 153, 255, 0.4);
+    box-shadow: 0 10px 36px rgba(0, 153, 255, 0.10);
+  }
+  .phase-card.current .phase-status {
+    background: var(--brand);
+    color: #fff;
+  }
+  .phase-card.current .phase-status .pulse {
+    background: #fff;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    animation: pulseLight 2s infinite;
+  }
+  .phase-card.upcoming { border-style: dashed; }
+  .phase-card.upcoming .phase-status {
+    background: var(--surface-2);
+    color: var(--muted);
+    border-color: var(--line);
+  }
+
+  @keyframes pulseLight {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
+    70%  { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  }
+
+  .phase-note {
+    margin-top: 2.2vh;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phase-note::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--line-2);
+  }
+
+  /* ============ CENTRALIZATION STORY ============ */
+  .story-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.4vw;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .story-stage {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 2.6vh 1.8vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6vh;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .story-stage.before {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(220, 38, 38, 0.05) 100%);
+  }
+  .story-stage.after {
+    background: var(--gradient-card);
+    border-color: rgba(0, 153, 255, 0.32);
+  }
+
+  .stage-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .story-stage.after .stage-label { color: var(--brand-2); }
+
+  .stage-badge {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 7px 16px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .stage-badge.bad { background: #FEE2E2; color: #B91C1C; }
+  .stage-badge.good {
+    background: var(--brand-tint);
+    color: var(--brand-2);
+    border: 1px solid rgba(0, 153, 255, 0.25);
+  }
+  body.dark .stage-badge.bad { background: rgba(248, 113, 113, 0.15); color: #FCA5A5; }
+
+  /* scattered "before" cloud */
+  .node-cloud {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    gap: 12px;
+  }
+  .svc-node {
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    padding: 9px 15px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--ink);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.06);
+    transform: rotate(var(--r));
+  }
+  .svc-node:nth-child(1) { --r: -7deg; }
+  .svc-node:nth-child(2) { --r: 6deg; }
+  .svc-node:nth-child(3) { --r: -4deg; }
+  .svc-node:nth-child(4) { --r: 8deg; }
+  .svc-node:nth-child(5) { --r: -5deg; }
+  .svc-node:nth-child(6) { --r: 5deg; }
+  .svc-node:nth-child(7) { --r: -9deg; }
+  .svc-node:nth-child(8) { --r: 7deg; }
+  .slide.active .story-stage.before .svc-node {
+    animation: wobble 3.4s ease-in-out infinite;
+  }
+  .slide.active .story-stage.before .svc-node:nth-child(2) { animation-delay: 0.3s; }
+  .slide.active .story-stage.before .svc-node:nth-child(3) { animation-delay: 0.6s; }
+  .slide.active .story-stage.before .svc-node:nth-child(4) { animation-delay: 0.9s; }
+  .slide.active .story-stage.before .svc-node:nth-child(5) { animation-delay: 1.2s; }
+  .slide.active .story-stage.before .svc-node:nth-child(6) { animation-delay: 1.5s; }
+  .slide.active .story-stage.before .svc-node:nth-child(7) { animation-delay: 0.45s; }
+  .slide.active .story-stage.before .svc-node:nth-child(8) { animation-delay: 0.75s; }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(var(--r)) translateY(0); }
+    50%      { transform: rotate(calc(var(--r) * 0.25)) translateY(-5px); }
+  }
+
+  .story-tangle {
+    position: absolute;
+    inset: 18% 14% 28%;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* center arrow */
+  .story-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 86px;
+  }
+  .story-arrow .arrow-glyph {
+    font-size: 2.1rem;
+    color: var(--brand);
+    animation: arrowPush 1.8s ease-in-out infinite;
+  }
+  .story-arrow .arrow-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: var(--brand-tint);
+    padding: 5px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  @keyframes arrowPush {
+    0%, 100% { transform: translateX(-5px); opacity: 0.55; }
+    50%      { transform: translateX(5px);  opacity: 1; }
+  }
+
+  /* tidy "after" hub */
+  .hub-diagram {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .hub-core {
+    background: var(--brand);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    border-radius: 12px;
+    text-align: center;
+    line-height: 1.15;
+    box-shadow: 0 10px 28px rgba(0, 153, 255, 0.28);
+  }
+  .hub-trunk {
+    width: 2px;
+    height: 20px;
+    background: var(--brand-3);
+  }
+  .hub-leaves {
+    display: flex;
+    gap: 10px;
+    position: relative;
+    padding-top: 18px;
+    width: 100%;
+    justify-content: center;
+  }
+  .hub-leaves::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: var(--brand-3);
+  }
+  .hub-leaf {
+    position: relative;
+    flex: 1;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid rgba(0, 153, 255, 0.32);
+    border-radius: 10px;
+    padding: 8px 6px;
+    font-family: var(--font-mono);
+    font-size: clamp(0.68rem, 0.82vw, 0.82rem);
+    color: var(--brand-2);
+    white-space: nowrap;
+  }
+  .hub-leaf::before {
+    content: '';
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 18px;
+    background: var(--brand-3);
+  }
+
+  /* story entry stagger */
+  .slide.active > .story-flow > * {
+    animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active > .story-flow > *:nth-child(1) { animation-delay: 0.50s; }
+  .slide.active > .story-flow > *:nth-child(2) { animation-delay: 0.66s; }
+  .slide.active > .story-flow > *:nth-child(3) { animation-delay: 0.80s; }
+
+  /* ============ SCRAPING SUCCESS RATE ============ */
+  .rate-split {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 2.4vw;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .rate-hero {
+    background: var(--gradient-card);
+    border: 1px solid rgba(0, 153, 255, 0.28);
+    border-radius: 18px;
+    padding: 3vh 2vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.8vh;
+  }
+  .rate-big {
+    display: flex;
+    align-items: baseline;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--brand);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .rate-big .js-count { font-size: clamp(3rem, 6vw, 5.5rem); font-variant-numeric: tabular-nums; }
+  .rate-big .rate-pct { font-size: clamp(2rem, 3.5vw, 3rem); }
+  .rate-sub {
+    font-size: clamp(1rem, 1.3vw, 1.3rem);
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .rate-sub strong { color: var(--brand-2); }
+  .rate-meta {
+    font-size: clamp(0.8rem, 0.9vw, 0.92rem);
+    color: var(--body);
+    margin-top: 0.4vh;
+  }
+  .rate-meta strong { color: var(--ink-2); }
+
+  .ba-row {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 2.4vh;
+  }
+  .ba-card {
+    flex: 1;
+    border-radius: 12px;
+    padding: 1.4vh 1vw;
+    text-align: center;
+  }
+  .ba-card.before {
+    background: rgba(220, 38, 38, 0.07);
+    border: 1px dashed rgba(220, 38, 38, 0.4);
+  }
+  body.dark .ba-card.before { background: rgba(248, 113, 113, 0.08); }
+  .ba-card.after {
+    background: var(--surface);
+    border: 1px solid var(--brand);
+  }
+  .ba-label {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .ba-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.2vw, 2rem);
+    line-height: 1;
+    color: var(--ink-2);
+  }
+  .ba-card.before .ba-value { color: #DC2626; letter-spacing: 0.05em; }
+  body.dark .ba-card.before .ba-value { color: #FCA5A5; }
+  .ba-card.after .ba-value { color: var(--brand); }
+  .ba-value span { font-size: 0.55em; font-weight: 600; color: var(--muted); }
+  .ba-note {
+    font-size: 0.72rem;
+    color: var(--body);
+    margin-top: 5px;
+    line-height: 1.35;
+  }
+  .ba-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--brand);
+    font-size: 1.4rem;
+  }
+
+  .rate-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5vh;
+  }
+  .rate-item-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .ri-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(0.92rem, 1.05vw, 1.05rem);
+    color: var(--ink-2);
+  }
+  .ri-name em {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .ri-pct {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--brand);
+  }
+  .rate-bar {
+    height: 9px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .rate-bar > span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--brand-2), var(--brand));
+    border-radius: 999px;
+    transition: width 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .slide.active .rate-bar > span { width: var(--w); }
+  .rate-item:nth-child(1) .rate-bar > span { transition-delay: 0.55s; }
+  .rate-item:nth-child(2) .rate-bar > span { transition-delay: 0.68s; }
+  .rate-item:nth-child(3) .rate-bar > span { transition-delay: 0.81s; }
+  .rate-item:nth-child(4) .rate-bar > span { transition-delay: 0.94s; }
+  .rate-item:nth-child(5) .rate-bar > span { transition-delay: 1.07s; }
+  .rate-item-foot {
+    margin-top: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+  .rate-item-foot .banned-0 { color: var(--brand-2); }
+
+  /* ============ CONSOLIDATION MAPPING (before → system) ============ */
+  .consol-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4vh;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .consol-heads,
+  .consol-row {
+    display: grid;
+    grid-template-columns: 1fr 54px 1.25fr;
+    gap: 1vw;
+    align-items: center;
+  }
+  .consol-heads { padding: 0 0.2vw; }
+  .consol-heads span {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .consol-heads .h-after { color: var(--brand-2); grid-column: 3; }
+
+  .consol-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+  }
+
+  .consol-before {
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.18);
+    border-radius: 12px;
+    padding: 1.05vh 1.1vw;
+    font-size: clamp(0.8rem, 0.9vw, 0.9rem);
+    color: var(--body);
+    line-height: 1.4;
+  }
+  body.dark .consol-before { background: rgba(248, 113, 113, 0.07); }
+
+  .consol-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .consol-arrow .link-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--brand-tint);
+    border: 1px solid rgba(0, 153, 255, 0.28);
+    color: var(--brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
+  }
+  .consol-row:hover .consol-arrow .link-badge {
+    background: var(--brand);
+    color: #fff;
+    transform: translateX(3px);
+  }
+
+  .consol-after {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.9vh 1.1vw;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .consol-row:hover .consol-after {
+    transform: translateY(-2px);
+    border-color: rgba(0, 153, 255, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 153, 255, 0.10);
+  }
+  .ca-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--brand-tint);
+    color: var(--brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ca-icon svg { width: 19px; height: 19px; }
+  .ca-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .consol-after strong {
+    font-family: var(--font-display);
+    color: var(--ink-2);
+    font-weight: 600;
+    font-size: clamp(0.88rem, 1vw, 1rem);
+    line-height: 1.2;
+  }
+  .consol-after .ca-desc {
+    font-size: clamp(0.76rem, 0.86vw, 0.86rem);
+    color: var(--body);
+    line-height: 1.3;
+  }
+  .consol-after .ca-tag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--brand-2);
+    border: 1px solid var(--line);
+    margin-left: auto;
+    align-self: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .consol-after .ca-tag.cost {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+
+  /* row stagger */
+  .slide.active .consol-row {
+    animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active .consol-row:nth-child(1) { animation-delay: 0.45s; }
+  .slide.active .consol-row:nth-child(2) { animation-delay: 0.55s; }
+  .slide.active .consol-row:nth-child(3) { animation-delay: 0.65s; }
+  .slide.active .consol-row:nth-child(4) { animation-delay: 0.75s; }
+  .slide.active .consol-row:nth-child(5) { animation-delay: 0.85s; }
+  .slide.active .consol-row:nth-child(6) { animation-delay: 0.95s; }
+
+  /* outcomes strip */
+  .payoff {
+    margin-top: 1.1vh;
+    border: 1px solid rgba(0, 153, 255, 0.32);
+    background: linear-gradient(180deg, var(--brand-tint) 0%, transparent 130%);
+    border-radius: 16px;
+    padding: 1.6vh 1.4vw;
+  }
+  .payoff-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 1.2vh;
+    flex-wrap: wrap;
+  }
+  .payoff-kicker {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.05rem, 1.3vw, 1.3rem);
+    letter-spacing: -0.015em;
+    color: var(--brand);
+  }
+  .payoff-sub { font-size: clamp(0.8rem, 0.92vw, 0.92rem); color: var(--body); }
+  .outcomes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1vw;
+  }
+  .outcome {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.5vh 1.2vw;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+  .outcome .oc-check {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--brand);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+    box-shadow: 0 5px 16px rgba(0, 153, 255, 0.3);
+  }
+  .outcome-text strong {
+    display: block;
+    color: var(--ink-2);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1rem, 1.15vw, 1.15rem);
+  }
+  .outcome-text span {
+    font-size: clamp(0.78rem, 0.86vw, 0.86rem);
+    color: var(--body);
+    line-height: 1.35;
+  }
+  .slide.active .outcome {
+    animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active .outcome:nth-child(1) { animation-delay: 1.00s; }
+  .slide.active .outcome:nth-child(2) { animation-delay: 1.12s; }
+  .slide.active .outcome:nth-child(3) { animation-delay: 1.24s; }
+
+  /* ============ DDOS DEFENSE PROOF (Wazuh) ============ */
+  .ddos-split {
+    display: grid;
+    grid-template-columns: 0.92fr 1.08fr;
+    gap: 2.4vw;
+    align-items: center;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .ddos-hero { display: flex; flex-direction: column; gap: 1.6vh; }
+
+  .ddos-stat-row {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .ddos-stat {
+    flex: 1;
+    border-radius: 14px;
+    padding: 2vh 1.2vw;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .ddos-stat.bad {
+    background: rgba(220, 38, 38, 0.07);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+  }
+  body.dark .ddos-stat.bad { background: rgba(248, 113, 113, 0.08); }
+  .ddos-stat.good {
+    background: var(--gradient-card);
+    border: 1px solid var(--brand);
+  }
+  .ds-num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 3.8vw, 3.4rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .ddos-stat.bad .ds-num { color: #DC2626; }
+  body.dark .ddos-stat.bad .ds-num { color: #FCA5A5; }
+  .ddos-stat.good .ds-num { color: var(--brand); }
+  .ds-lab {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ddos-arrow-mid {
+    display: flex;
+    align-items: center;
+    color: var(--brand);
+    font-size: 1.8rem;
+  }
+
+  .ddos-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9vh;
+  }
+  .ddos-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: clamp(0.84rem, 0.94vw, 0.94rem);
+    color: var(--body);
+    line-height: 1.45;
+  }
+  .ddos-points li strong { color: var(--ink-2); font-weight: 600; }
+  .ddos-points .pcheck {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    background: var(--brand);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-top: 1px;
+  }
+
+  .shot-frame {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  }
+  body.dark .shot-frame { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+  .shot-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .shot-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); }
+  .shot-bar .dot:nth-child(1) { background: #FF5F57; }
+  .shot-bar .dot:nth-child(2) { background: #FEBC2E; }
+  .shot-bar .dot:nth-child(3) { background: #28C840; }
+  .shot-bar .shot-title {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .shot-frame img { display: block; width: 100%; height: auto; }
+  .shot-caption {
+    padding: 12px 16px;
+    font-size: clamp(0.78rem, 0.88vw, 0.88rem);
+    color: var(--body);
+    border-top: 1px solid var(--line);
+    background: var(--surface-3);
+  }
+  .shot-caption strong { color: var(--brand-2); font-weight: 600; }
+
+  /* ============ SCREENSHOT GALLERY ============ */
+  .shot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4vw;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .shot-grid .shot-frame { display: flex; flex-direction: column; }
+  .shot-grid .shot-bar { padding: 7px 12px; }
+  .shot-grid .shot-bar .dot { width: 8px; height: 8px; }
+  .shot-grid .shot-frame img {
+    width: 100%;
+    height: 22vh;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .shot-grid .shot-caption {
+    padding: 8px 13px;
+    font-size: clamp(0.72rem, 0.8vw, 0.8rem);
+  }
+  .slide.active > .shot-grid > .shot-frame {
+    animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide.active > .shot-grid > .shot-frame:nth-child(1) { animation-delay: 0.45s; }
+  .slide.active > .shot-grid > .shot-frame:nth-child(2) { animation-delay: 0.57s; }
+  .slide.active > .shot-grid > .shot-frame:nth-child(3) { animation-delay: 0.69s; }
+  .slide.active > .shot-grid > .shot-frame:nth-child(4) { animation-delay: 0.81s; }
+
+  /* ============ AI STATUS GROUPS (catalog roadmap row) ============ */
+  .ai-status-row {
+    display: grid;
+    grid-template-columns: 0.7fr 2fr 1fr;
+    gap: 1.2vw;
+    align-items: start;
+  }
+  .ai-status-group.soon-group .asg-pill { font-size: clamp(0.68rem, 0.78vw, 0.78rem); padding: 4px 9px; }
+  .ai-status-group { display: flex; flex-direction: column; gap: 0.7vh; }
+  .asg-head {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 0.2vh;
+  }
+  .asg-head::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+  .asg-head.amber { color: #D97706; } .asg-head.amber::before { background: #F59E0B; }
+  .asg-head.grey  { color: var(--muted); } .asg-head.grey::before { background: var(--muted); }
+  .asg-head.blue  { color: var(--brand-2); } .asg-head.blue::before { background: var(--brand); }
+  body.dark .asg-head.amber { color: #FBBF24; }
+  .asg-items { display: flex; flex-wrap: wrap; gap: 7px; }
+  .asg-pill {
+    font-family: var(--font-mono);
+    font-size: clamp(0.74rem, 0.84vw, 0.84rem);
+    padding: 5px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+  .asg-pill.amber { border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.06); }
+  .asg-pill.soon  { border-style: dashed; color: var(--muted); }
+  .asg-pill.ml    { border-color: rgba(0, 153, 255, 0.3); color: var(--brand-2); background: var(--brand-tint); }
+
+  /* ============ TOOL LINK CHIP ============ */
+  .tool-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: clamp(0.82rem, 0.95vw, 0.95rem);
+    color: var(--brand);
+    background: var(--brand-tint);
+    border: 1px solid rgba(0, 153, 255, 0.28);
+    padding: 8px 15px;
+    border-radius: 999px;
+  }
+  .tool-link::before { content: '🔗'; font-size: 0.9em; }
+
+  /* extra stagger slots */
+  .slide.active .feature-item:nth-child(7) { animation-delay: 1.33s; }
+  .slide.active .feature-item:nth-child(7) .check { animation-delay: 1.48s; }
+
+  /* ============ TEAM & MEETINGS ============ */
+  .team-split {
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 2.2vw;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: center;
+  }
+  .team-side { display: flex; flex-direction: column; gap: 2vh; }
+  .team-group { display: flex; flex-direction: column; gap: 1.1vh; }
+  .team-group-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .team-group-label::before { content: ''; width: 18px; height: 1px; background: var(--brand); }
+  .team-row { display: flex; gap: 1vw; }
+  .person {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5vh;
+  }
+  .person .avatar {
+    width: 100%;
+    max-width: clamp(52px, 5.6vw, 82px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 2px solid var(--line-2);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  }
+  body.dark .person .avatar { border-color: rgba(255, 255, 255, 0.14); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+  .person .pname {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(0.72rem, 0.86vw, 0.9rem);
+    color: var(--ink-2);
+    line-height: 1.12;
+  }
+  .person .prole {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
+  .person .pfocus { font-size: 0.64rem; color: var(--muted); line-height: 1.2; }
+
+  .slide.active .team-row .person { animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .slide.active .team-row .person:nth-child(1) { animation-delay: 0.45s; }
+  .slide.active .team-row .person:nth-child(2) { animation-delay: 0.53s; }
+  .slide.active .team-row .person:nth-child(3) { animation-delay: 0.61s; }
+  .slide.active .team-row .person:nth-child(4) { animation-delay: 0.69s; }
+  .slide.active .team-row .person:nth-child(5) { animation-delay: 0.77s; }
+
+  .meet-side { display: flex; flex-direction: column; gap: 1.2vh; justify-content: center; }
+  .meet-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.7vh 1.2vw;
+    background: var(--gradient-card);
+  }
+  .meet-card .mc-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(0.92rem, 1.05vw, 1.08rem);
+    color: var(--ink-2);
+    line-height: 1.2;
+  }
+  .meet-card .mc-sub {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    color: var(--brand-2);
+    margin-top: 3px;
+  }
+  .mc-line { font-size: clamp(0.76rem, 0.85vw, 0.85rem); color: var(--body); margin-top: 0.9vh; }
+  .mc-line strong { color: var(--ink-2); font-weight: 600; }
+  .mc-line .lab {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  .slide.active .meet-card { animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .slide.active .meet-card:nth-of-type(1) { animation-delay: 0.6s; }
+  .slide.active .meet-card:nth-of-type(2) { animation-delay: 0.74s; }
+
+  /* ============ SKULY-AI SERVICE DETAIL GRID ============ */
+  .ai-services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.3vh 1vw;
+    flex: 0 1 auto;
+  }
+  .ai-service-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.6vh 1vw;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6vh;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .ai-service-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 153, 255, 0.4);
+    box-shadow: 0 10px 26px rgba(0, 153, 255, 0.1);
+  }
+  .ai-service-card.ml { background: var(--gradient-card); border-color: rgba(0, 153, 255, 0.25); }
+  .asc-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--brand-tint);
+    color: var(--brand);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .asc-icon svg { width: 19px; height: 19px; }
+  .asc-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(0.86rem, 0.98vw, 0.98rem);
+    color: var(--ink-2);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .asc-name .ml-pip {
+    font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.06em;
+    color: var(--brand-2); background: var(--brand-tint); padding: 1px 6px; border-radius: 4px;
+  }
+  .asc-desc { font-size: clamp(0.74rem, 0.84vw, 0.84rem); color: var(--body); line-height: 1.35; }
+  .slide.active > .ai-services-grid > .ai-service-card { animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(1) { animation-delay: 0.42s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(2) { animation-delay: 0.49s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(3) { animation-delay: 0.56s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(4) { animation-delay: 0.63s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(5) { animation-delay: 0.70s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(6) { animation-delay: 0.77s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(7) { animation-delay: 0.84s; }
+  .slide.active > .ai-services-grid > .ai-service-card:nth-child(8) { animation-delay: 0.91s; }
+
+  /* two-up phase track for Q3 + Q4 */
+  .phase-track.duo { grid-template-columns: 1fr 1fr; }
+
+  /* ============ CURTAIN REVEAL (section dividers) ============ */
+  .reveal-slide {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+  .reveal-core {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6vh;
+    max-width: 76%;
+  }
+  .reveal-kicker {
+    font-family: var(--font-mono);
+    font-size: clamp(0.78rem, 0.95vw, 0.95rem);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brand);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .reveal-kicker::before,
+  .reveal-kicker::after { content: ''; width: 30px; height: 1px; background: var(--brand); }
+  .reveal-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.035em;
+    line-height: 1;
+    color: var(--ink-2);
+  }
+  .reveal-name .accent { color: var(--brand); }
+  .reveal-logo {
+    max-height: 14vh;
+    width: auto;
+    object-fit: contain;
+    margin-bottom: 0.6vh;
+  }
+  body.dark .reveal-logo { filter: brightness(1.08); }
+  .reveal-tagline {
+    color: var(--body);
+    font-size: clamp(1rem, 1.4vw, 1.3rem);
+    line-height: 1.5;
+  }
+  .curtain {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50.6%;
+    z-index: 5;
+    background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+    transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1) 0.35s;
+  }
+  .curtain.left  { left: 0;  border-right: 1px solid var(--brand); box-shadow: 10px 0 40px rgba(0, 153, 255, 0.12); }
+  .curtain.right { right: 0; border-left: 1px solid var(--brand);  box-shadow: -10px 0 40px rgba(0, 153, 255, 0.12); }
+  .slide.active .curtain.left  { transform: translateX(-101%); }
+  .slide.active .curtain.right { transform: translateX(101%); }
+  .slide.active .reveal-core {
+    animation: revealIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+  }
+  @keyframes revealIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); filter: blur(6px); }
+    to   { opacity: 1; transform: none; filter: blur(0); }
+  }
+
+  /* ============ TEAM regroup + motto + dev-hours notes ============ */
+  .team-top { display: flex; gap: 3vw; align-items: flex-start; }
+  .team-top .team-group { flex: 1; }
+
+  .team-motto {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.1rem, 1.7vw, 1.7rem);
+    letter-spacing: -0.02em;
+    color: var(--ink-2);
+    margin-bottom: 1vh;
+  }
+  .team-motto .accent { color: var(--brand); }
+  .slide.active > .team-motto { animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; }
+
+  .stage-extra {
+    font-family: var(--font-mono);
+    font-size: clamp(0.66rem, 0.78vw, 0.78rem);
+    letter-spacing: 0.02em;
+    margin-top: 0.8vh;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .story-stage.before .stage-extra { color: #DC2626; }
+  body.dark .story-stage.before .stage-extra { color: #FCA5A5; }
+  .story-stage.after .stage-extra { color: var(--brand-2); }
+
+  /* ============ FEATURE SPOTLIGHT SLIDES (Wazuh / Skuly-AI / Skuly-HR) ============ */
+  .spotlight {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 2.5vw;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .spotlight-left {
+    background: var(--gradient-card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 3vh 2vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spotlight-left::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, transparent 60%, rgba(0, 153, 255, 0.06) 100%);
+    pointer-events: none;
+  }
+
+  .spotlight-logo {
+    max-width: 70%;
+    max-height: 24vh;
+    margin-bottom: 2.5vh;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .spotlight-name {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ink-2);
+    margin-bottom: 1vh;
+  }
+
+  .spotlight-name .accent { color: var(--brand); }
+
+  .spotlight-tagline {
+    font-family: var(--font-mono);
+    color: var(--body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    margin-bottom: 2vh;
+  }
+
+  .spotlight-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brand-tint);
+    border: 1px solid rgba(0, 153, 255, 0.25);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--brand-2);
+    letter-spacing: 0.05em;
+  }
+
+  .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 0 0 rgba(0, 153, 255, 0.6);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 153, 255, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(0, 153, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 153, 255, 0); }
+  }
+
+  .spotlight-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4vh;
+    overflow: hidden;
+  }
+
+  .feature-block-title {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.2vw, 1.15rem);
+    font-weight: 600;
+    color: var(--ink-2);
+    margin-bottom: 0.6vh;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .feature-block-title .pip {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--brand);
+    background: var(--brand-tint);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6vh 1vw;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0.7vh 0;
+  }
+
+  .feature-item .check {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--brand);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .feature-item .check.ip {
+    background: transparent;
+    border: 1.5px dashed var(--brand);
+    color: var(--brand);
+  }
+
+  .feature-item-text {
+    font-size: clamp(0.82rem, 0.92vw, 0.92rem);
+    line-height: 1.45;
+    color: var(--body);
+  }
+
+  .feature-item-text strong { color: var(--ink-2); font-weight: 600; }
+
+  .divider-soft {
+    height: 1px;
+    background: var(--line);
+    margin: 0.4vh 0;
+  }
+
+  /* ============ CLOSING SLIDE ============ */
+  .closing-slide {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .closing-slide .thanks {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    color: var(--ink-2);
+    margin-bottom: 2.5vh;
+  }
+
+  .closing-slide .thanks .accent { color: var(--brand); }
+
+  .closing-slide .closing-sub {
+    color: var(--body);
+    font-size: clamp(1rem, 1.5vw, 1.3rem);
+    max-width: 60ch;
+    line-height: 1.5;
+    margin-bottom: 3.5vh;
+  }
+
+  .closing-slide .signature {
+    font-family: var(--font-mono);
+    color: var(--brand);
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+
+  /* ============ FOOTER / NAV ============ */
+  .deck-footer {
+    position: fixed;
+    bottom: 18px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 3vw;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .progress-bar {
+    flex: 1;
+    max-width: 260px;
+    height: 2px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: auto;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--brand);
+    width: 14%;
+    transition: width 0.4s ease;
+    border-radius: 2px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .ctrl-btn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+
+  .ctrl-btn:hover {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+
+  #theme .theme-icon-dark { display: none; }
+  body.dark #theme .theme-icon-light { display: none; }
+  body.dark #theme .theme-icon-dark { display: inline; }
+
+  .slide-counter {
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    pointer-events: auto;
+  }
+
+  .slide-counter .current { color: var(--brand); }
+
+  .hint {
+    position: fixed;
+    top: 18px;
+    right: 24px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    z-index: 10;
+  }
+
+  .hint kbd {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--brand);
+    margin: 0 2px;
+    font-family: var(--font-mono);
+  }
+
+  @media (max-width: 980px) {
+    .cards, .phase-track, .story-flow, .rate-split, .ddos-split, .shot-grid, .ai-status-row, .ai-services-grid, .team-split, .outcomes, .spotlight, .feature-grid { grid-template-columns: 1fr !important; gap: 12px; }
+    .team-row { flex-wrap: wrap; }
+    .slide { padding: 5vh 6vw; overflow-y: auto; justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Wazuh-inspired shield mark only — Skulytics uses the real PNG logo -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="wazuh-logo" viewBox="0 0 100 100">
+      <path d="M50 8 L88 22 L88 50 C88 72 72 88 50 94 C28 88 12 72 12 50 L12 22 Z"
+            fill="none" stroke="#0099FF" stroke-width="5"/>
+      <path d="M30 50 L44 64 L72 36" fill="none" stroke="#0099FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="hint">
+  <kbd>←</kbd><kbd>→</kbd> navigate · <kbd>F</kbd> fullscreen · <kbd>T</kbd> theme · <kbd>Esc</kbd> exit
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1: TITLE ============ -->
+<section class="slide title-slide active" data-slide="1">
+    <img class="title-logo" src="assets/skulytics-logo.png" alt="Skulytics" />
+    <div class="title-eyebrow">Skulytics Internal</div>
+    <h1>Engineering <span class="accent">Update</span></h1>
+    <p class="subtitle">A quarterly look at what we shipped, what we're building, and where Skulytics Engineering is heading next.</p>
+    <div class="title-meta">
+      <span>Q2 → Q4</span>
+      <span class="dot"></span>
+      <span>2026</span>
+      <span class="dot"></span>
+      <span>v.1.0</span>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2: TEAM & MEETINGS ============ -->
+  <section class="slide" data-slide="2">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// engineering team</div>
+    </div>
+
+    <div class="kicker">00 · The Team</div>
+    <h2 class="slide-title">The team behind <span class="accent">Q2 → Q4</span></h2>
+    <div class="team-motto">Small by headcount, big by <span class="accent">output</span>.</div>
+    <p class="slide-lede">The people driving every initiative — and the routine meetings that keep us aligned.</p>
+
+    <div class="team-split">
+      <div class="team-side">
+        <div class="team-top">
+          <div class="team-group">
+            <div class="team-group-label">Leadership</div>
+            <div class="team-row">
+              <div class="person">
+                <img class="avatar" src="assets/team-sandhy.png" alt="Sandhy Zidan" />
+                <div class="pname">Sandhy Zidan</div>
+                <div class="prole">Technical Lead</div>
+              </div>
+              <div class="person">
+                <img class="avatar" src="assets/team-edwin.png" alt="Edwin Pujiantoro" />
+                <div class="pname">Edwin Pujiantoro</div>
+                <div class="prole">DE Lead</div>
+              </div>
+            </div>
+          </div>
+          <div class="team-group">
+            <div class="team-group-label">Team Development</div>
+            <div class="team-row">
+              <div class="person">
+                <img class="avatar" src="assets/team-sandi.png" alt="Sandi Fauzan" />
+                <div class="pname">Sandi Fauzan</div>
+                <div class="prole">Frontend</div>
+              </div>
+              <div class="person">
+                <img class="avatar" src="assets/team-fuad.png" alt="Fuad Zaidan" />
+                <div class="pname">Fuad Zaidan</div>
+                <div class="prole">Backend</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="team-group">
+          <div class="team-group-label">Data Engineering</div>
+          <div class="team-row">
+            <div class="person">
+              <img class="avatar" src="assets/team-reyval.png" alt="Reyval Yudha" />
+              <div class="pname">Reyval Yudha</div>
+              <div class="prole">Senior DE</div>
+              <div class="pfocus">Appliances · LAP/LCP</div>
+            </div>
+            <div class="person">
+              <img class="avatar" src="assets/team-haerul.png" alt="Haerul Fitrah" />
+              <div class="pname">Haerul Fitrah</div>
+              <div class="prole">Senior DE</div>
+              <div class="pfocus">Furniture · Mattresses · Pipeline</div>
+            </div>
+            <div class="person">
+              <img class="avatar" src="assets/team-aiman.png" alt="Aiman Fadhilah" />
+              <div class="pname">Aiman Fadhilah</div>
+              <div class="prole">Senior DE</div>
+              <div class="pfocus">Buyback</div>
+            </div>
+            <div class="person">
+              <img class="avatar" src="assets/team-daffa.png" alt="Muhammad Daffa Fauzan" />
+              <div class="pname">M. Daffa Fauzan</div>
+              <div class="prole">DE</div>
+              <div class="pfocus">Next PIC of Skuly-AI</div>
+            </div>
+            <div class="person">
+              <img class="avatar" src="assets/team-randy.png" alt="Randy Setiawan Putra" />
+              <div class="pname">Randy S. Putra</div>
+              <div class="prole">DE</div>
+              <div class="pfocus">Scraping fixes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meet-side">
+        <div class="team-group-label">Routine Meetings</div>
+        <div class="meet-card">
+          <div class="mc-title">Technical Performance Review</div>
+          <div class="mc-line"><span class="lab">Initiated by</span><strong>Technical Lead</strong></div>
+          <div class="mc-line"><span class="lab">With</span>DE Lead · Frontend · Backend</div>
+        </div>
+        <div class="meet-card">
+          <div class="mc-title">Routine DE Meeting</div>
+          <div class="mc-sub">DE Meeting + DE Retrospective</div>
+          <div class="mc-line"><span class="lab">Initiated by</span><strong>DE Lead</strong></div>
+          <div class="mc-line"><span class="lab">With</span>the DE Team</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3: PHASE ROADMAP (Q2-Q4) ============ -->
+<section class="slide" data-slide="3">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// the year ahead</div>
+    </div>
+
+    <div class="kicker">00 / Roadmap</div>
+    <h2 class="slide-title">Three quarters, <span class="accent">one arc</span></h2>
+    <p class="slide-lede">After our engineering restructure, we framed the rest of 2026 in three phases — each building on the one before.</p>
+
+    <div class="phase-track">
+      <div class="phase-card done">
+        <div class="phase-q">Q2</div>
+        <div class="phase-name">Initiation</div>
+        <ul class="phase-list">
+          <li><strong>Centralization</strong> — shared logic &amp; infra</li>
+          <li><strong>Decreasing tech debt</strong></li>
+          <li><strong>New product initiation</strong></li>
+        </ul>
+        <div class="phase-status">✓ Shipped</div>
+      </div>
+
+      <div class="phase-card current">
+        <div class="phase-q">Q3</div>
+        <div class="phase-name">Expansion</div>
+        <ul class="phase-list">
+          <li><strong>Build out</strong> the new products</li>
+          <li><strong>Ship more</strong> — faster, broader</li>
+          <li><strong>Scale Skuly-AI</strong> across the stack</li>
+        </ul>
+        <div class="phase-status"><span class="pulse"></span> In focus now</div>
+      </div>
+
+      <div class="phase-card upcoming">
+        <div class="phase-q">Q4</div>
+        <div class="phase-name">Maintenance</div>
+        <ul class="phase-list">
+          <li><strong>Maintain</strong> what we built</li>
+          <li><strong>Stabilize &amp; optimize</strong></li>
+          <li><strong>Reliability</strong> at scale</li>
+        </ul>
+        <div class="phase-status">→ Up next</div>
+      </div>
+    </div>
+
+    <div class="phase-note">Q1 predates the engineering restructure — our story starts at Q2.</div>
+  </section>
+
+  <!-- ============ SLIDE 4: WHAT WE SHIPPED (Q2) ============ -->
+<section class="slide" data-slide="4">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// throwback</div>
+    </div>
+
+    <div class="kicker">01 / Recap</div>
+    <h2 class="slide-title">What we <span class="accent">shipped</span> on Q2 <span class="title-phase">(Initiation)</span></h2>
+    <p class="slide-lede">Infrastructure, independence, and observability wins that hardened the platform this period.</p>
+
+    <div class="cards">
+      <div class="card clickable" data-modal="modal-cost">
+        <div class="card-index">— 01</div>
+        <h3>Reduce Cost &amp; Upgrade Server</h3>
+        <p>Consolidated 10 servers into 5 stronger ones — better specs, more capacity, lower bill.</p>
+        <div class="cost-metric">
+          <div class="cost-metric-main">
+            <span class="cost-currency">−$</span><span class="cost-count js-count" data-target="344.50" data-decimals="2">0.00</span><span class="cost-unit">/mo</span>
+          </div>
+          <div class="cost-metric-sub">saved every month · <strong>≈ $4,134 / year</strong></div>
+        </div>
+        <div class="tag-row">
+          <span class="tag">Infra</span>
+          <span class="tag solid pulse-tag">−37.6% cost</span>
+        </div>
+        <span class="click-hint">Click for details →</span>
+      </div>
+
+      <div class="card">
+        <div class="card-index">— 02</div>
+        <h3>S3 Migration off Appliance.IO</h3>
+        <p>Moved object storage to a Skulytics-owned S3, removing a critical external dependency and giving us full control over data, lifecycle, and access.</p>
+        <div class="tag-row">
+          <span class="tag">Independence</span>
+          <span class="tag">Storage</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-index">— 03</div>
+        <h3>Product-Wide Monitoring</h3>
+        <p>End-to-end logging and observability across every product surface.</p>
+        <ul>
+          <li><strong>Security</strong> — Wazuh</li>
+          <li><strong>Scraping</strong> — Grafana + Prometheus</li>
+          <li><strong>Apps (Backend)</strong> — Sentry</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5: CENTRALIZATION STORY ============ -->
+<section class="slide" data-slide="5">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// centralization</div>
+    </div>
+
+    <div class="kicker">Q2 · Initiation</div>
+    <h2 class="slide-title">From scattered to <span class="accent">centralized</span></h2>
+    <p class="slide-lede">Our scrapers and data pipelines used to live in separate places — every fix meant touching many systems. We pulled them into one core. Now one change updates everything.</p>
+
+    <div class="story-flow">
+      <div class="story-stage before">
+        <div class="stage-label">Before · Scattered</div>
+        <svg class="story-tangle" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M5,15 C40,80 70,10 95,75" fill="none" stroke="#DC2626" stroke-width="0.7"/>
+          <path d="M5,80 C45,10 60,90 95,20" fill="none" stroke="#DC2626" stroke-width="0.7"/>
+          <path d="M10,45 C50,60 55,30 92,52" fill="none" stroke="#DC2626" stroke-width="0.7"/>
+          <path d="M5,55 C35,20 65,85 95,40" fill="none" stroke="#DC2626" stroke-width="0.7"/>
+          <path d="M20,5 C30,55 75,55 80,95" fill="none" stroke="#DC2626" stroke-width="0.7"/>
+        </svg>
+        <div class="node-cloud">
+          <span class="svc-node">Appliances</span>
+          <span class="svc-node">Furniture</span>
+          <span class="svc-node">Buyback</span>
+          <span class="svc-node">LAP / LCP</span>
+          <span class="svc-node">Scattered AI</span>
+          <span class="svc-node">10 Servers</span>
+          <span class="svc-node">Backend errors</span>
+        </div>
+        <div class="stage-badge bad">⚠ Hard to maintain</div>
+        <div class="stage-extra">Dev hours — impossible to count</div>
+      </div>
+
+      <div class="story-arrow">
+        <div class="arrow-glyph">→</div>
+        <div class="arrow-label">Centralize</div>
+      </div>
+
+      <div class="story-stage after">
+        <div class="stage-label">After · Structured</div>
+        <div class="hub-diagram">
+          <div class="hub-core">Centralized<br>Core</div>
+          <div class="hub-trunk"></div>
+          <div class="hub-leaves">
+            <span class="hub-leaf">Scraping</span>
+            <span class="hub-leaf">Pricing</span>
+            <span class="hub-leaf">Skuly-AI</span>
+            <span class="hub-leaf">Wazuh</span>
+            <span class="hub-leaf">Sentry</span>
+          </div>
+        </div>
+        <div class="stage-badge good">✓ Easy to maintain</div>
+        <div class="stage-extra">Reduced dev hours — now measurable</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6: WHAT WE CONSOLIDATED ============ -->
+<section class="slide" data-slide="6">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// consolidation</div>
+    </div>
+
+    <div class="kicker">Q2 · Initiation</div>
+    <h2 class="slide-title">What we pulled <span class="accent">together</span></h2>
+    <p class="slide-lede">Six scattered, hard-to-watch areas — each now lives in one place we can see and manage, including the infrastructure itself.</p>
+
+    <div class="consol-wrap">
+      <div class="consol-heads">
+        <span>Before — scattered</span>
+        <span></span>
+        <span class="h-after">Now — one system</span>
+      </div>
+
+      <div class="consol-list">
+        <div class="consol-row">
+          <div class="consol-before">Appliances, Furniture &amp; Mattresses, and Buyback scrapers — each watched on its own</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M8 17v-5"/><path d="M13 17V7"/><path d="M18 17v-9"/></svg></span>
+            <div class="ca-body"><strong>Daily Scraping Maintenance</strong><span class="ca-desc">one live dashboard watches them all</span></div>
+            <span class="ca-tag">Grafana</span>
+          </div>
+        </div>
+
+        <div class="consol-row">
+          <div class="consol-before">LAP / LCP pricing logic — duplicated across systems</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z"/><path d="M7.5 7.5h.01"/></svg></span>
+            <div class="ca-body"><strong>Pricing LAP/LCP System</strong><span class="ca-desc">one pricing engine, one source of truth</span></div>
+            <span class="ca-tag">Pricing</span>
+          </div>
+        </div>
+
+        <div class="consol-row">
+          <div class="consol-before">AI used ad-hoc and scattered across the team</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span>
+            <div class="ca-body"><strong>Skuly-AI</strong><span class="ca-desc">one AI layer powering the product</span></div>
+            <span class="ca-tag">AI</span>
+          </div>
+        </div>
+
+        <div class="consol-row">
+          <div class="consol-before">10 servers across mixed providers — scattered, paying for idle capacity</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/><path d="M7 7h.01"/><path d="M7 17h.01"/></svg></span>
+            <div class="ca-body"><strong>5 Consolidated Servers</strong><span class="ca-desc">centralized infrastructure, stronger specs</span></div>
+            <span class="ca-tag cost">−$344.50/mo</span>
+          </div>
+        </div>
+
+        <div class="consol-row">
+          <div class="consol-before">Servers running with no security visibility</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 7.7-8 9-4.6-1.3-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div class="ca-body"><strong>Wazuh</strong><span class="ca-desc">security watching every server, 24/7</span></div>
+            <span class="ca-tag">Security</span>
+          </div>
+        </div>
+
+        <div class="consol-row">
+          <div class="consol-before">Backend errors slipping by undetected</div>
+          <div class="consol-arrow"><span class="link-badge">→</span></div>
+          <div class="consol-after">
+            <span class="ca-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <div class="ca-body"><strong>Sentry</strong><span class="ca-desc">every error caught the moment it happens</span></div>
+            <span class="ca-tag">Monitoring</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="payoff">
+        <div class="payoff-head"><span class="payoff-kicker">The payoff</span><span class="payoff-sub">Beyond being centralized, consolidation gave us:</span></div>
+        <div class="outcomes">
+          <div class="outcome">
+            <span class="oc-check">✓</span>
+            <div class="outcome-text"><strong>Fewer bugs</strong><span>Quality up across the product</span></div>
+          </div>
+          <div class="outcome">
+            <span class="oc-check">✓</span>
+            <div class="outcome-text"><strong>Easier maintenance</strong><span>Fix once — it applies everywhere</span></div>
+          </div>
+          <div class="outcome">
+            <span class="oc-check">✓</span>
+            <div class="outcome-text"><strong>New internal tools</strong><span>Capabilities we didn't have before</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7: REVEAL — SKULY-AI ============ -->
+  <section class="slide reveal-slide" data-slide="7">
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div class="reveal-core">
+      <img class="reveal-logo" src="assets/skuly-ai-logo.png" alt="Skuly-AI" />
+      <div class="reveal-kicker">Internal Product · 01 / 05</div>
+      <div class="reveal-name">Skuly<span class="accent">-AI</span></div>
+      <div class="reveal-tagline">AI woven into product accuracy and engineering workflows.</div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8: SKULY-AI CATALOG ============ -->
+<section class="slide" data-slide="8">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// ai products</div>
+    </div>
+
+    <div class="kicker">Spotlight · AI</div>
+    <h2 class="slide-title">Inside <span class="accent">Skuly-AI</span></h2>
+
+    <div class="spotlight">
+      <div class="spotlight-left">
+        <img class="spotlight-logo" src="assets/skuly-ai-logo.png" alt="Skuly-AI" />
+        <div class="spotlight-name">Skuly<span class="accent">-AI</span></div>
+        <div class="spotlight-tagline">AI agents and models that enrich product data, validate fields, and accelerate engineering workflows — already shipping across the catalog.</div>
+        <div class="spotlight-status"><span class="pulse"></span> In production &amp; expanding</div>
+        <a class="tool-link" style="margin-top:1.6vh">ai.skulytics.io</a>
+      </div>
+
+      <div class="spotlight-right">
+        <div>
+          <div class="feature-block-title">Live AI Services <span class="pip">7 LIVE</span></div>
+          <div class="feature-grid">
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Suggest Category</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Suggest Color</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Type</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Style</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Comfort</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Short Description</strong></div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Standardized Specs</strong></div></div>
+          </div>
+        </div>
+
+        <div class="divider-soft"></div>
+
+        <div class="ai-status-row">
+          <div class="ai-status-group">
+            <div class="asg-head amber">In Progress</div>
+            <div class="asg-items">
+              <span class="asg-pill amber">Rebates Checker</span>
+            </div>
+          </div>
+          <div class="ai-status-group soon-group">
+            <div class="asg-head grey">Coming Soon</div>
+            <div class="asg-items">
+              <span class="asg-pill soon">Search SKU by AI</span>
+              <span class="asg-pill soon">Image Searcher</span>
+              <span class="asg-pill soon">Filter</span>
+              <span class="asg-pill soon">Skuly-AI Assistant</span>
+              <span class="asg-pill soon">Requirement Generator</span>
+              <span class="asg-pill soon">Self-Healing Code</span>
+              <span class="asg-pill soon">PR Reviewer</span>
+              <span class="asg-pill soon">Test Case Generator</span>
+              <span class="asg-pill soon">Normalize Product Name</span>
+            </div>
+          </div>
+          <div class="ai-status-group">
+            <div class="asg-head blue">Integrations · ML</div>
+            <div class="asg-items">
+              <span class="asg-pill ml">Primary Images</span>
+              <span class="asg-pill ml">Create Params Category</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9: SKULY-AI SERVICES ============ -->
+  <section class="slide" data-slide="9">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// skuly-ai · services</div>
+    </div>
+
+    <div class="kicker">Spotlight · AI</div>
+    <h2 class="slide-title">Skuly-AI, service by <span class="accent">service</span></h2>
+    <p class="slide-lede">Each model does one job well — together they keep the catalog accurate, consistent, and complete.</p>
+
+    <div class="ai-services-grid">
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z"/><path d="M7.5 7.5h.01"/></svg></span>
+        <div class="asc-name">Suggest Category</div>
+        <div class="asc-desc">Files every product into the right catalog category — automatically.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 5.5 6 10a6 6 0 0 1-12 0c0-4.5 6-10 6-10z"/></svg></span>
+        <div class="asc-name">Suggest Color</div>
+        <div class="asc-desc">Reads each product's real color from its images and specs.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+        <div class="asc-name">Type</div>
+        <div class="asc-desc">Identifies what kind of product each SKU actually is.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5l6 6L9 21H3v-6z"/><path d="M11 6l7 7"/></svg></span>
+        <div class="asc-name">Style</div>
+        <div class="asc-desc">Tags the design style so products are easier to browse.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="7" rx="2"/><path d="M6 10V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/><path d="M5 17v2M19 17v2"/></svg></span>
+        <div class="asc-name">Comfort</div>
+        <div class="asc-desc">Scores comfort traits for furniture &amp; mattresses.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>
+        <div class="asc-name">Short Description</div>
+        <div class="asc-desc">Writes a clean, consistent blurb for each product.</div>
+      </div>
+      <div class="ai-service-card">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+        <div class="asc-name">Standardized Specs</div>
+        <div class="asc-desc">Turns messy spec sheets into one tidy, uniform format.</div>
+      </div>
+      <div class="ai-service-card ml">
+        <span class="asc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 16l-5-5L5 21"/></svg></span>
+        <div class="asc-name">Primary Image <span class="ml-pip">ML</span></div>
+        <div class="asc-desc">Picks the best hero image for each product, automatically.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10: SKULY-AI IN ACTION ============ -->
+<section class="slide" data-slide="10">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// skuly-ai · in action</div>
+    </div>
+
+    <div class="kicker">Spotlight · AI</div>
+    <h2 class="slide-title">Skuly-AI, <span class="accent">running live</span></h2>
+    <p class="slide-lede">Real services, real throughput — classifying, enriching, and validating the catalog every day.</p>
+
+    <div class="shot-grid">
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Skuly-AI · Services</span></div>
+        <img src="assets/skuly-ai-dashboard.png" alt="Skuly-AI dashboard showing Live, In Development and Coming Soon services" />
+        <div class="shot-caption">Every service grouped by status — <strong>Live</strong>, In Development, Coming Soon.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">AI Category · Dashboard</span></div>
+        <img src="assets/skuly-ai-category.png" alt="AI Category dashboard with unapproved counts and active sessions" />
+        <div class="shot-caption"><strong>48,384</strong> products triaged · <strong>248 brands</strong> · live classification sessions.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Primary Image · ML</span></div>
+        <img src="assets/skuly-ai-primary.png" alt="Primary Image ML reference pool of cooktop images" />
+        <div class="shot-caption">CLIP-based <strong>Primary Image</strong> model — AUC 0.995 on reference pools.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Primary Image · Approved SKUs</span></div>
+        <img src="assets/skuly-ai-approved.png" alt="Approved SKUs list synced to production" />
+        <div class="shot-caption"><strong>192</strong> SKU images approved &amp; synced straight to production.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11: REVEAL — MONITORING ============ -->
+  <section class="slide reveal-slide" data-slide="11">
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div class="reveal-core">
+      <div class="reveal-kicker">Monitoring · 02 / 05</div>
+      <div class="reveal-name">Monitoring</div>
+      <div class="reveal-tagline">Accuracy and scraping health, watched every single day.</div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12: ACCURACY MONITOR ============ -->
+<section class="slide" data-slide="12">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// accuracy monitor</div>
+    </div>
+
+    <div class="kicker">Internal Tool · Data Quality</div>
+    <h2 class="slide-title">Monitoring accuracy, <span class="accent">end to end</span></h2>
+    <p class="slide-lede">A new internal tool for our Data Engineers &amp; DQA team to catch data drift before it ever reaches a customer.</p>
+
+    <div class="ddos-split">
+      <div class="ddos-hero">
+        <a class="tool-link">accuracy.skulytics.io</a>
+        <ul class="ddos-points">
+          <li><span class="pcheck">✓</span><div>Compares <strong>API V1 vs API V2</strong> responses, field by field.</div></li>
+          <li><span class="pcheck">✓</span><div>Cross-checks <strong>Database Scrape vs Database Live</strong>.</div></li>
+          <li><span class="pcheck">✓</span><div>Flags every <strong>per-SKU mismatch</strong> — fully matched vs partial.</div></li>
+          <li><span class="pcheck">✓</span><div>Covers <strong>412 brands</strong>, with CSV export for the team.</div></li>
+        </ul>
+      </div>
+
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">accuracy.skulytics.io — Product Status</span></div>
+        <img src="assets/accuracy-products.png" alt="Accuracy monitor comparing Scrape, Live, v1 cache, v2 cache per SKU with mismatch status" />
+        <div class="shot-caption">Per SKU: <strong>Scrape vs Live</strong> and <strong>v1 vs v2 cache</strong> — instantly flags any mismatch.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13: DAILY SCRAPING MAINTENANCE ============ -->
+  <section class="slide" data-slide="13">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// daily scraping maintenance</div>
+    </div>
+
+    <div class="kicker">Internal Tool · Operations</div>
+    <h2 class="slide-title">Daily Scraping <span class="accent">Maintenance</span></h2>
+    <p class="slide-lede">Every scraper has a daily checklist — so nothing is missed or left stale. Status is tracked per brand and reported every day in <strong>#skulytics-report</strong> on Slack.</p>
+
+    <div class="shot-grid">
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Daily Scraping List · Schedule</span></div>
+        <img src="assets/scrape-schedule.png" alt="Daily scraping schedule per brand with last status and run time" />
+        <div class="shot-caption">Per-brand schedule, <strong>tracked</strong> live — Success / On Progress, with run time.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Slack · Standby Team</span></div>
+        <img src="assets/scrape-standby2.png" alt="Slack standby team rotation for the day" />
+        <div class="shot-caption">A <strong>standby team</strong> rotates daily — someone always owns it.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">#skulytics-report · Daily Summary</span></div>
+        <img src="assets/scrape-report1.png" alt="Daily maintenance report with per-brand checklist" />
+        <div class="shot-caption">A daily report — what's <strong>fixed</strong>, what's pending, at a glance.</div>
+      </div>
+      <div class="shot-frame">
+        <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">#skulytics-report · Issue + Action</span></div>
+        <img src="assets/scrape-report2.png" alt="Daily scraping report with root cause and action item" />
+        <div class="shot-caption">Issues triaged with <strong>root cause &amp; action</strong> — never silently dropped.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14: LAP/LCP SUCCESS RATE ============ -->
+<section class="slide" data-slide="14">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// lap · lcp health</div>
+    </div>
+
+    <div class="kicker">Q2 · LAP/LCP Centralized</div>
+    <h2 class="slide-title">Almost everything now gets <span class="accent">tracked</span></h2>
+    <p class="slide-lede">Centralizing LAP/LCP into one pricing system didn't just make it easier to maintain — it made scraping far more reliable. Bans are now a rounding error.</p>
+
+    <div class="rate-split">
+      <div class="rate-hero">
+        <div class="rate-big"><span class="js-count" data-target="99.97" data-decimals="2">0.00</span><span class="rate-pct">%</span></div>
+        <div class="rate-sub">of products successfully <strong>tracked</strong></div>
+        <div class="rate-meta">384,887 products scraped this cycle · only <strong>134 banned</strong></div>
+
+        <div class="ba-row">
+          <div class="ba-card before">
+            <div class="ba-label">Before centralization</div>
+            <div class="ba-value">???</div>
+            <div class="ba-note">far more bans — and hard to even measure</div>
+          </div>
+          <div class="ba-arrow">→</div>
+          <div class="ba-card after">
+            <div class="ba-label">Now</div>
+            <div class="ba-value">134 <span>banned</span></div>
+            <div class="ba-note">across 384k products · &lt; 0.04%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rate-list">
+        <div class="rate-item">
+          <div class="rate-item-head"><span class="ri-name">BestBuy <em>High + Highest</em></span><span class="ri-pct">100%</span></div>
+          <div class="rate-bar"><span style="--w:100%"></span></div>
+          <div class="rate-item-foot">161,600 products · <span class="banned-0">0 banned</span> · 19h 04m</div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-item-head"><span class="ri-name">Home Depot <em>High + Highest</em></span><span class="ri-pct">99.97%</span></div>
+          <div class="rate-bar"><span style="--w:99.97%"></span></div>
+          <div class="rate-item-foot">119,358 products · 34 banned · 7h 58m</div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-item-head"><span class="ri-name">PC Richard <em>High + Highest</em></span><span class="ri-pct">100%</span></div>
+          <div class="rate-bar"><span style="--w:100%"></span></div>
+          <div class="rate-item-foot">80,822 products · <span class="banned-0">0 banned</span> · 0h 13m</div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-item-head"><span class="ri-name">AJ Madison <em>High + Highest</em></span><span class="ri-pct">99.73%</span></div>
+          <div class="rate-bar"><span style="--w:99.73%"></span></div>
+          <div class="rate-item-foot">15,085 products · 40 banned · 7h 54m</div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-item-head"><span class="ri-name">Lowe's <em>High only</em></span><span class="ri-pct">99.25%</span></div>
+          <div class="rate-bar"><span style="--w:99.25%"></span></div>
+          <div class="rate-item-foot">8,022 products · 60 banned · ~13m</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15: REVEAL — WAZUH ============ -->
+  <section class="slide reveal-slide" data-slide="15">
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div class="reveal-core">
+      <div class="reveal-kicker">Security · 03 / 05</div>
+      <div class="reveal-name">Wazuh<span class="accent">.</span></div>
+      <div class="reveal-tagline">Security across the entire Skulytics estate.</div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16: WAZUH SPOTLIGHT ============ -->
+<section class="slide" data-slide="16">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// security stack</div>
+    </div>
+
+    <div class="kicker">Spotlight · Security</div>
+    <h2 class="slide-title">Inside <span class="accent">Wazuh</span></h2>
+
+    <div class="spotlight">
+      <div class="spotlight-left">
+        <svg class="spotlight-logo" style="height:18vh" viewBox="0 0 100 100"><use href="#wazuh-logo"/></svg>
+        <div class="spotlight-name">Wazuh<span class="accent">.</span></div>
+        <div class="spotlight-tagline">Our open-source XDR &amp; SIEM platform — unified threat detection, integrity monitoring, and incident response across the Skulytics estate.</div>
+        <div class="spotlight-status"><span class="pulse"></span> In production</div>
+        <a class="tool-link" style="margin-top:1.6vh">wazuh.skulytics.io</a>
+      </div>
+
+      <div class="spotlight-right">
+        <div>
+          <div class="feature-block-title">Capabilities <span class="pip">LIVE</span></div>
+          <div class="feature-grid">
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Log Data Analysis</strong> — centralized logs from all servers &amp; services</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>File Integrity Monitoring</strong> — tamper detection on critical paths</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Vulnerability Detection</strong> — package &amp; CVE scanning</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Configuration Assessment</strong> — CIS &amp; hardening checks</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Intrusion Detection</strong> — rootkit &amp; anomaly alerts</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Active Response</strong> — automated containment workflows</div></div>
+          </div>
+        </div>
+
+        <div class="divider-soft"></div>
+
+        <div>
+          <div class="feature-block-title">SSH Access Tracking <span class="pip">LIVE</span></div>
+          <div class="shot-frame">
+            <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Wazuh · Authentication events</span></div>
+            <img src="assets/wazuh-ssh.png" alt="Wazuh authentication success alerts for SSH access per server" style="max-height:20vh;object-fit:cover;object-position:top" />
+            <div class="shot-caption">Every SSH login to every server is logged &amp; alerted — all hosts now, <strong>AWS in Q3</strong>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17: BRUTE-FORCE PROTECTION ============ -->
+<section class="slide" data-slide="17">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// brute-force protection</div>
+    </div>
+
+    <div class="kicker">Spotlight · Security</div>
+    <h2 class="slide-title">63,000 brute-force hits, <span class="accent">zero</span> got through</h2>
+    <p class="slide-lede">After hardening, public brute-force events dropped from ~63,000+ to zero. We locked down public access ports and let Fail2Ban auto-ban repeat offenders — with Wazuh watching everything.</p>
+
+    <div class="ddos-split">
+      <div class="ddos-hero">
+        <div class="ddos-stat-row">
+          <div class="ddos-stat bad">
+            <div class="ds-num"><span class="js-count" data-target="63000" data-decimals="0">0</span>+</div>
+            <div class="ds-lab">brute-force events</div>
+          </div>
+          <div class="ddos-arrow-mid">→</div>
+          <div class="ddos-stat good">
+            <div class="ds-num">0</div>
+            <div class="ds-lab">public events now</div>
+          </div>
+        </div>
+
+        <ul class="ddos-points">
+          <li><span class="pcheck">✓</span><div><strong>Restricted public / common access ports</strong> — closed the easy front doors.</div></li>
+          <li><span class="pcheck">✓</span><div><strong>Fail2Ban auto-bans IPs</strong> after repeated failed attempts — no manual work.</div></li>
+          <li><span class="pcheck">✓</span><div><strong>0 critical · 0 high severity</strong> alerts in the last 24 hours, confirmed in Wazuh.</div></li>
+        </ul>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1.2vh;min-width:0;">
+        <div class="shot-frame">
+          <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Slack · Brute-force alerts — before auto-ban</span></div>
+          <img src="assets/wazuh-bruteforce.png" alt="Slack brute-force attack alerts flooding daily before auto-ban" style="max-height:18vh;object-fit:cover;object-position:top" />
+          <div class="shot-caption"><strong>Before</strong> — attacks hammered the servers every day (hundreds of alerts each).</div>
+        </div>
+        <div class="shot-frame">
+          <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Wazuh · Overview — now</span></div>
+          <img src="assets/wazuh-dashboard.png" alt="Wazuh dashboard showing 0 critical and 0 high severity alerts in the last 24 hours" />
+          <div class="shot-caption"><strong>After</strong> — <strong>0 critical · 0 high</strong>; medium/low are routine noise.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18: REVEAL — SENTRY ============ -->
+  <section class="slide reveal-slide" data-slide="18">
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div class="reveal-core">
+      <div class="reveal-kicker">Reliability · 04 / 05</div>
+      <div class="reveal-name">Sentry<span class="accent">.</span></div>
+      <div class="reveal-tagline">Every backend error, caught the moment it happens.</div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19: SENTRY ============ -->
+  <section class="slide" data-slide="19">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// error monitoring</div>
+    </div>
+
+    <div class="kicker">Spotlight · Reliability</div>
+    <h2 class="slide-title">Inside <span class="accent">Sentry</span></h2>
+
+    <div class="spotlight">
+      <div class="spotlight-left">
+        <svg class="spotlight-logo" style="height:16vh" viewBox="0 0 100 100" fill="none" stroke="#0099FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M50 14 L88 82 L12 82 Z"/>
+          <path d="M50 40 V60"/>
+          <circle cx="50" cy="71" r="3.4" fill="#0099FF" stroke="none"/>
+        </svg>
+        <div class="spotlight-name">Sentry<span class="accent">.</span></div>
+        <div class="spotlight-tagline">Backend error monitoring across every app — we see failures the moment they happen, instead of hearing about them from customers.</div>
+        <div class="spotlight-status"><span class="pulse"></span> In production</div>
+      </div>
+
+      <div class="spotlight-right">
+        <div>
+          <div class="feature-block-title">Capabilities <span class="pip">LIVE</span></div>
+          <div class="feature-grid">
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Error Tracking</strong> — every backend exception captured</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Full Stack Traces</strong> — pinpoint the exact line that broke</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Real-time Alerts</strong> — the team knows within seconds</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Release Health</strong> — catch regressions per deploy</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Performance Traces</strong> — surface slow endpoints</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Issue Routing</strong> — bugs land with the right owner</div></div>
+          </div>
+        </div>
+
+        <div class="divider-soft"></div>
+
+        <div>
+          <div class="feature-block-title">In Action</div>
+          <div class="shot-frame">
+            <div class="shot-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shot-title">Sentry · Slack alert</span></div>
+            <img src="assets/sentry-slack.png" alt="Sentry Slack alert: a database query exception auto-captured and assigned to an engineer" />
+            <div class="shot-caption">A real exception — auto-captured, triaged, and <strong>assigned to the right engineer</strong> in seconds.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20: REVEAL — SKULY-HR ============ -->
+  <section class="slide reveal-slide" data-slide="20">
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div class="reveal-core">
+      <img class="reveal-logo" src="assets/skuly-hr-logo.png" alt="Skuly-HR" />
+      <div class="reveal-kicker">Internal Tool · 05 / 05</div>
+      <div class="reveal-name">Skuly<span class="accent">-HR</span></div>
+      <div class="reveal-tagline">Built by engineering, for the team.</div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 21: SKULY-HR ============ -->
+<section class="slide" data-slide="21">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// internal tooling</div>
+    </div>
+
+    <div class="kicker">Spotlight · People Ops</div>
+    <h2 class="slide-title">Inside <span class="accent">Skuly-HR</span></h2>
+
+    <div class="spotlight">
+      <div class="spotlight-left">
+        <img class="spotlight-logo" src="assets/skuly-hr-logo.png" alt="Skuly-HR" />
+        <div class="spotlight-name">Skuly<span class="accent">-HR</span></div>
+        <div class="spotlight-tagline">An internal tool built by engineering, for the team — leave &amp; remote requests with clean logging and real-time team availability.</div>
+        <div class="spotlight-status"><span class="pulse"></span> Live · iterating</div>
+      </div>
+
+      <div class="spotlight-right">
+        <div>
+          <div class="feature-block-title">Core Features <span class="pip">LIVE</span></div>
+          <div class="feature-grid">
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Leave Requests</strong> — submission &amp; approval flow</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Remote Work Requests</strong> — single-day &amp; range</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Team Availability</strong> — who's in / out at a glance</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Audit Log</strong> — every action recorded</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>Approval Workflow</strong> — manager routing</div></div>
+            <div class="feature-item"><span class="check">✓</span><div class="feature-item-text"><strong>History &amp; Balance</strong> — leave tracking per user</div></div>
+          </div>
+        </div>
+
+        <div class="divider-soft"></div>
+
+        <div>
+          <div class="feature-block-title">Feedback-Driven Improvements <span class="pip">WIP</span></div>
+          <div class="feature-grid">
+            <div class="feature-item"><span class="check ip">→</span><div class="feature-item-text">Streamlined request submission</div></div>
+            <div class="feature-item"><span class="check ip">→</span><div class="feature-item-text">Smarter notifications &amp; reminders</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 22: Q3 + Q4 ROADMAP ============ -->
+  <section class="slide" data-slide="22">
+    <div class="header">
+      <img class="logo-mark" src="assets/skulytics-logo.png" alt="Skulytics" />
+      <div class="brand-sub">// what's next</div>
+    </div>
+
+    <div class="kicker">Next · Q3 → Q4</div>
+    <h2 class="slide-title">From building to <span class="accent">sustaining</span></h2>
+    <p class="slide-lede">Q3 expands what we shipped; Q4 hardens it for the long run.</p>
+
+    <div class="phase-track duo">
+      <div class="phase-card current">
+        <div class="phase-q">Q3</div>
+        <div class="phase-name">Expansion · Building</div>
+        <ul class="phase-list">
+          <li><strong>Scale Skuly-AI</strong> — Rebates Checker, Search SKU, Image Searcher, Filter</li>
+          <li><strong>Extend Wazuh</strong> into AWS</li>
+          <li><strong>Data enrichment &amp; validation</strong> across the catalog</li>
+          <li><strong>Ship more products</strong>, faster</li>
+        </ul>
+        <div class="phase-status"><span class="pulse"></span> In focus now</div>
+      </div>
+
+      <div class="phase-card upcoming">
+        <div class="phase-q">Q4</div>
+        <div class="phase-name">Maintenance</div>
+        <ul class="phase-list">
+          <li><strong>Stabilize &amp; optimize</strong> what we built</li>
+          <li><strong>Backup verification</strong> &amp; credential audit</li>
+          <li><strong>Continuous vulnerability</strong> analysis</li>
+          <li><strong>Reliability</strong> at scale</li>
+        </ul>
+        <div class="phase-status">→ Up next</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 23: CLOSING ============ -->
+<section class="slide closing-slide" data-slide="23">
+    <img class="title-logo" src="assets/skulytics-logo.png" alt="Skulytics" />
+    <div class="title-eyebrow">Skulytics Engineering</div>
+    <div class="thanks">Thank <span class="accent">you</span>.</div>
+    <p class="closing-sub">Resources limited. Data unlimited. 🚀</p>
+    <div class="signature">Engineering · 2026</div>
+  </section>
+
+</div>
+
+<!-- ============ MODAL: COST REDUCTION ============ -->
+<div class="modal-overlay" id="modal-cost" data-modal-id="modal-cost">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div class="modal-title-block">
+        <span class="modal-eyebrow">Infra · Cost &amp; Capacity</span>
+        <span class="modal-title">Reduce Cost &amp; Upgrade Server</span>
+      </div>
+      <button class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="savings-strip">
+        <div class="savings-card">
+          <div class="savings-label">Before · 10 servers</div>
+          <div class="savings-value">$915<span style="font-size:0.6em;color:var(--muted);">/mo</span></div>
+          <div class="savings-sub">Mixed providers · KnownHost + DatabaseMart</div>
+        </div>
+        <div class="savings-card">
+          <div class="savings-label">After · 5 servers</div>
+          <div class="savings-value">$570.50<span style="font-size:0.6em;color:var(--muted);">/mo</span></div>
+          <div class="savings-sub">Consolidated on DatabaseMart · upgraded specs</div>
+        </div>
+        <div class="savings-card highlight">
+          <div class="savings-label">Monthly Savings</div>
+          <div class="savings-value">−$344.50</div>
+          <div class="savings-sub">−37.6% · ~$4,134 saved per year</div>
+        </div>
+      </div>
+
+      <div class="table-pair">
+
+        <!-- PREVIOUS -->
+        <div class="table-block">
+          <div class="table-block-head">
+            <h4>Previous Server</h4>
+            <span class="pill">10 hosts · $915/mo</span>
+          </div>
+          <table class="srv-table">
+            <thead>
+              <tr>
+                <th>#</th><th>IP</th><th>Role</th><th>Provider</th><th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="removed"><td>1</td><td>170.249.211.82</td><td>Server API LAP/LCP (Scrape PC Richard)</td><td>KnownHost</td><td class="cost">$69.00</td></tr>
+              <tr class="removed"><td>2</td><td>170.249.196.146</td><td>Server Proxy All Scrape</td><td>KnownHost</td><td class="cost">$49.00</td></tr>
+              <tr><td>3</td><td>69.197.152.29</td><td>Server Buyback Scrape</td><td>DatabaseMart</td><td class="cost">$129.00</td></tr>
+              <tr class="removed"><td>4</td><td>173.208.151.40</td><td>Server Staging + AIO <span class="badge-unsub">UNSUB</span></td><td>DatabaseMart</td><td class="cost">$83.00</td></tr>
+              <tr class="removed"><td>5</td><td>170.249.199.58</td><td>Server LAP LCP (Homedepot) + Testing GUI</td><td>KnownHost</td><td class="cost">$49.00</td></tr>
+              <tr><td>6</td><td>142.54.160.15</td><td>LAP/LCP + Ajmadison Docker</td><td>DatabaseMart</td><td class="cost">$129.00</td></tr>
+              <tr class="removed"><td>7</td><td>108.181.95.9</td><td>Wazuh · scrape.skulytics · AI Filter · Grafana · Staging DB</td><td>DatabaseMart</td><td class="cost">$83.20</td></tr>
+              <tr><td>8</td><td>208.110.72.155</td><td>Server Accuracy</td><td>DatabaseMart</td><td class="cost">$87.20</td></tr>
+              <tr><td>9</td><td>208.110.66.29</td><td>DB Scrape · Mongo Staging · Prometheus</td><td>DatabaseMart</td><td class="cost">$107.20</td></tr>
+              <tr class="removed"><td>10</td><td>204.12.236.135</td><td>— <span class="badge-unsub">UNSUB</span></td><td>DatabaseMart</td><td class="cost">$129.00</td></tr>
+              <tr class="total"><td colspan="4">Total</td><td class="cost">$915.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- FUTURE -->
+        <div class="table-block future">
+          <div class="table-block-head">
+            <h4>Future Server</h4>
+            <span class="pill">5 hosts · $570.50/mo</span>
+          </div>
+          <table class="srv-table">
+            <thead>
+              <tr>
+                <th>#</th><th>IP</th><th>Role</th><th>Provider</th><th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="kept"><td>1</td><td>208.110.66.29</td><td>Database Scraping (Live)</td><td>DatabaseMart</td><td class="cost">$107.20</td></tr>
+              <tr class="kept"><td>2</td><td>208.110.72.155</td><td>Accuracy · AI Service · Services Scraping</td><td>DatabaseMart</td><td class="cost">$87.20</td></tr>
+              <tr class="kept"><td>3</td><td>142.54.160.15</td><td>LAP LCP (UI + Docker) · Scraping GUI · Proxy (rotate IP)</td><td>DatabaseMart</td><td class="cost">$129.00</td></tr>
+              <tr class="kept"><td>4</td><td>69.197.152.29</td><td>Scraping Appliances · Furniture · Buyback</td><td>DatabaseMart</td><td class="cost">$129.00</td></tr>
+              <tr class="kept"><td>5</td><td>108.181.196.166</td><td>Skulytics Services (Wazuh · Staging · Grafana · Storage)</td><td>DatabaseMart</td><td class="cost">$118.10</td></tr>
+              <tr class="total"><td colspan="4">Total</td><td class="cost">$570.50</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="deck-footer">
+  <div class="slide-counter">
+    <span class="current" id="cur">01</span> / <span id="total">08</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div class="controls">
+    <button class="ctrl-btn" id="theme" title="Toggle dark mode" aria-label="Toggle theme">
+      <span class="theme-icon-light">☀</span>
+      <span class="theme-icon-dark">☾</span>
+    </button>
+    <button class="ctrl-btn" id="prev" title="Previous">‹</button>
+    <button class="ctrl-btn" id="next" title="Next">›</button>
+    <button class="ctrl-btn" id="full" title="Fullscreen">⛶</button>
+  </div>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const progressEl = document.getElementById('progress');
+
+  totalEl.textContent = String(total).padStart(2, '0');
+
+  function fmtNum(v, decimals) {
+    return v.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  function animateCount(el) {
+    const target = parseFloat(el.dataset.target);
+    if (isNaN(target)) return;
+    const decimals = el.dataset.decimals !== undefined ? parseInt(el.dataset.decimals, 10) : 2;
+    const duration = el.dataset.duration ? parseInt(el.dataset.duration, 10) : 1400;
+    let startTs = null;
+    el.textContent = fmtNum(0, decimals);
+    function tick(ts) {
+      if (startTs === null) startTs = ts;
+      const t = Math.min((ts - startTs) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      el.textContent = fmtNum(target * eased, decimals);
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = fmtNum(target, decimals);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function show(i) {
+    if (i < 0 || i >= total) return;
+    slides.forEach((s, idx) => {
+      s.classList.remove('active', 'prev');
+      if (idx < i) s.classList.add('prev');
+      if (idx === i) s.classList.add('active');
+    });
+    current = i;
+    curEl.textContent = String(i + 1).padStart(2, '0');
+    progressEl.style.width = ((i + 1) / total) * 100 + '%';
+
+    // Re-run count-up animations on the now-active slide, timed to land
+    // just after the content finishes sliding in.
+    const counters = slides[i].querySelectorAll('.js-count');
+    counters.forEach(c => {
+      const d = c.dataset.decimals !== undefined ? parseInt(c.dataset.decimals, 10) : 2;
+      c.textContent = fmtNum(0, d);
+    });
+    if (counters.length) {
+      setTimeout(() => counters.forEach(animateCount), 650);
+    }
+  }
+
+  document.getElementById('next').addEventListener('click', () => show(Math.min(current + 1, total - 1)));
+  document.getElementById('prev').addEventListener('click', () => show(Math.max(current - 1, 0)));
+
+  // ============ THEME TOGGLE ============
+  const savedTheme = localStorage.getItem('skuly-theme');
+  if (savedTheme === 'dark') document.body.classList.add('dark');
+
+  document.getElementById('theme').addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('skuly-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  document.getElementById('full').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  // ============ MODAL HANDLING ============
+  const overlays = document.querySelectorAll('.modal-overlay');
+
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModals() {
+    overlays.forEach(o => o.classList.remove('open'));
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.card.clickable').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.modal;
+      if (id) openModal(id);
+    });
+  });
+
+  overlays.forEach(o => {
+    o.addEventListener('click', (e) => {
+      if (e.target === o) closeModals();
+    });
+    const closeBtn = o.querySelector('.modal-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeModals);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const modalOpen = document.querySelector('.modal-overlay.open');
+
+    if (e.key === 'Escape') {
+      if (modalOpen) { closeModals(); return; }
+    }
+    if (modalOpen) return; // disable nav while modal open
+
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      show(Math.min(current + 1, total - 1));
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      show(Math.max(current - 1, 0));
+    } else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    } else if (e.key === 't' || e.key === 'T') {
+      document.getElementById('theme').click();
+    } else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(total - 1);
+  });
+
+  let touchStart = null;
+  document.addEventListener('touchstart', (e) => { touchStart = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    if (touchStart === null) return;
+    const dx = e.changedTouches[0].clientX - touchStart;
+    if (Math.abs(dx) > 50) show(dx < 0 ? Math.min(current + 1, total - 1) : Math.max(current - 1, 0));
+    touchStart = null;
+  });
+
+  show(0);
+</script>
+
+</body>
+</html>
