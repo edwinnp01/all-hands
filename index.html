@@ -2505,6 +2505,9 @@
   .kpi-cols > div:last-child .kpi-val { color: var(--brand); }
   .kpi-val.sm { font-size: clamp(1rem, 1.45vw, 1.35rem); line-height: 1.5; }
   .kpi-val .tbd { color: var(--muted); font-weight: 500; }
+  .kpi-detail { display: flex; gap: 8px; margin-top: 0.8vh; flex-wrap: wrap; }
+  .kpi-detail span { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); padding: 2px 8px; border-radius: 999px; }
+  .kpi-detail b { color: var(--ink); font-weight: 600; }
   .kpi-delta { margin-top: 1.4vh; font-family: var(--font-mono); font-size: 0.74rem; color: #12A150; letter-spacing: 0.04em; }
   .wins-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.1rem, 1.5vw, 1.4rem); color: var(--ink-2); }
   .wins-list { list-style: none; display: flex; flex-direction: column; gap: 1.4vh; }
@@ -2831,9 +2834,10 @@
         <div class="kpi-head"><div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg></div><h3>New Clients</h3></div>
         <div class="kpi-cols">
           <div><div class="kpi-lab">September</div><div class="kpi-val">5</div></div>
-          <div><div class="kpi-lab">October</div><div class="kpi-val">7</div></div>
+          <div><div class="kpi-lab">October</div><div class="kpi-val">6</div></div>
         </div>
-        <div class="kpi-delta">▲ +2 · +40% MoM</div>
+        <div class="kpi-delta">▲ +1 · +20% MoM</div>
+        <div class="kpi-detail"><span><b>3</b> canceled</span><span><b>2</b> CC not added</span></div>
       </div>
       <div class="kpi">
         <div class="kpi-head"><div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M8 16v-4M12 16V8M16 16v-6M20 16V6"/></svg></div><h3>Active Subscriptions</h3></div>
